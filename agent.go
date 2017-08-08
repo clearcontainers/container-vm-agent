@@ -23,6 +23,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -35,6 +36,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	_ "github.com/opencontainers/runc/libcontainer/nsenter"
+	"github.com/opencontainers/runc/libcontainer/system"
 	"github.com/opencontainers/runc/libcontainer/utils"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
@@ -706,6 +708,7 @@ func (p *pod) runContainerProcess(cid, pid string, terminal bool, started chan e
 	// Get exit code
 	exitCode := uint8(255)
 	if processState != nil {
+		agentLog.Infof("ProcessState: %+v", processState)
 		if waitStatus, ok := processState.Sys().(syscall.WaitStatus); ok {
 			exitCode = uint8(waitStatus.ExitStatus())
 		}
@@ -795,6 +798,46 @@ func (p *pod) runCmd(cmd hyper.HyperCmd, data []byte) error {
 	return cb(p, data)
 }
 
+func reapChildProcess() {
+	signals := make(chan os.Signal)
+	signal.Notify(signals, syscall.SIGCHLD)
+
+	agentPid := os.Getpid()
+
+	for s := range signals {
+		switch s {
+		case unix.SIGCHLD:
+			break
+		default:
+			agentLog.Errorf("Unexpected signal %s", string(s.(syscall.Signal)))
+			return
+		}
+
+		var ws unix.WaitStatus
+		var rus unix.Rusage
+
+		for {
+			pid, err := unix.Wait4(-1, &ws, unix.WNOHANG, &rus)
+			if err != nil {
+				if err == unix.ECHILD {
+					agentLog.Infof("pid %d: %v", agentPid, err)
+					break
+				}
+
+				agentLog.Errorf("Failed to wait for processes: %v", err)
+				return
+			}
+
+			if pid <= 0 {
+				agentLog.Infof("No exited child available")
+				break
+			}
+
+			agentLog.Infof("pid %d properly waited pid %d", agentPid, pid)
+		}
+	}
+}
+
 func startPodCb(pod *pod, data []byte) error {
 	var payload hyper.StartPod
 
@@ -821,6 +864,17 @@ func startPodCb(pod *pod, data []byte) error {
 	if err := pod.setupNetwork(); err != nil {
 		return fmt.Errorf("Could not setup the network: %v", err)
 	}
+
+	// Set the current process as subreaper so that it will receive the
+	// SIGCHLD signals when its child processes will be terminated.
+	if err := system.SetSubreaper(1); err != nil {
+		agentLog.Warn(err)
+	}
+
+	// This go routine will be running during the entire life of the pod.
+	// It will wait for any child spawned by libcontainer on behalf of the
+	// current process (parent).
+	go reapChildProcess()
 
 	return nil
 }
