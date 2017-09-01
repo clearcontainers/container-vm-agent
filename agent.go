@@ -184,7 +184,7 @@ func main() {
 	}
 	applyConfig(config)
 
-	agentLog.Infof("Agent version: %s", Version)
+	agentLog.Infof("Agent version-ee: %s", Version)
 
 	if uptime, err := newEventTime(agentStartedEvent); err != nil {
 		agentLog.Errorf("Failed to get uptime %v", err)
@@ -909,6 +909,8 @@ func (p *pod) runCmd(cmd hyper.HyperCmd, data []byte) error {
 func startPodCb(pod *pod, data []byte) error {
 	var payload hyper.StartPod
 
+	agentLog.Infof("EERNST inside startPodCb:")
+
 	if pod.running == true {
 		return fmt.Errorf("Pod already started, impossible to start again")
 	}
@@ -917,10 +919,12 @@ func startPodCb(pod *pod, data []byte) error {
 		return err
 	}
 
+	agentLog.Infof("EERNST calling mountShareDir from startPodCb:")
+
 	if err := mountShareDir(payload.ShareDir); err != nil {
 		return err
 	}
-
+	agentLog.Infof("EERNST post calling mountShareDir from startPodCb:")
 	pod.id = payload.ID
 	pod.running = true
 	pod.network = hyper.Network{
