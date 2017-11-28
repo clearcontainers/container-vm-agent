@@ -135,6 +135,7 @@ var defaultCapsList = []string{
 	"CAP_MKNOD",
 	"CAP_AUDIT_WRITE",
 	"CAP_SETFCAP",
+	"CAP_SYS_ADMIN",
 }
 
 type agentConfig struct {
