@@ -39,6 +39,9 @@ export RACE_DETECTION=true
 # Clone Tests repository.
 go get "$test_repo"
 
+# Update apt repositories
+sudo -E apt update
+
 # Install libudev-dev required for go-udev vendor dependency
 if [ "$ID" == fedora ]
 then
