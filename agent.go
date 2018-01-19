@@ -526,7 +526,9 @@ func (p *pod) listenToUdevEvents(done chan struct{}) {
 		for d := range ch {
 			fieldLogger.WithFields(logrus.Fields{
 				"udev-path":  d.Syspath(),
+				"dev-path":   d.Devpath(),
 				"udev-event": d.Action(),
+				"event":      d,
 			}).Info("Received udev event")
 
 			// Ignore udev events for block devices, these are handled by another go-routine in waitForBlockDevice
@@ -1283,10 +1285,13 @@ func newContainerCb(pod *pod, data []byte) error {
 		return fmt.Errorf("Pod not started, impossible to run a new container")
 	}
 
+	agentLog.WithField("xxxData", data).Info("Data before parsing")
+
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return err
 	}
 
+	agentLog.WithField("xxxpayload", payload).Info("Payload parsed")
 	if payload.Process.ID == "" {
 		payload.Process.ID = fmt.Sprintf("%d", payload.Process.Stdio)
 	}
@@ -1295,7 +1300,7 @@ func newContainerCb(pod *pod, data []byte) error {
 		return fmt.Errorf("Container %s already exists, impossible to create", payload.ID)
 	}
 
-	absoluteRootFs, err := mountContainerRootFs(payload.ID, payload.Image, payload.RootFs, payload.FsType)
+	absoluteRootFs, err := mountContainerRootFs(payload.ID, payload.Image, payload.RootFs, payload.FsType, payload.SCSIAddr)
 	if err != nil {
 		return err
 	}

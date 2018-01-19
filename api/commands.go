@@ -182,6 +182,9 @@ type NewContainer struct {
 	Fsmap            []Fsmap          `json:"fsmap"`
 	Process          Process          `json:"process"`
 	SystemMountsInfo SystemMountsInfo `json:"systemMountsInfo"`
+
+	// SCSI address in the format SCSI-Id:LUN
+	SCSIAddr string `json:"scsiAddr,omitempty"`
 }
 
 // KillContainer describes the format expected by a KILLCONTAINER command.

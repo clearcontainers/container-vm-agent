@@ -520,10 +520,10 @@ func (c *Container) start() error {
 	}
 
 	if err = c.pod.agent.startContainer(*(c.pod), *c); err != nil {
-		c.Logger().WithError(err).Error("Failed to start container")
+		c.Logger().WithError(err).Error("Failedddddd to start container")
 
 		if err := c.stop(); err != nil {
-			c.Logger().WithError(err).Warn("Failed to stop container")
+			c.Logger().WithError(err).Warn("Failedddd to stop container")
 		}
 		return err
 	}
