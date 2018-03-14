@@ -29,9 +29,9 @@ HAVE_SYSTEMD := $(shell pkg-config --exists systemd 2>/dev/null && echo 'yes')
 
 ifeq ($(HAVE_SYSTEMD),yes)
 UNIT_DIR := $(shell pkg-config --variable=systemdsystemunitdir systemd)
-UNIT_FILES = clear-containers.service
+UNIT_FILES = clear-containers.service clear-containers-debug.service
 GENERATED_FILES := $(UNIT_FILES)
-UNIT_FILES += clear-containers.target
+UNIT_FILES += clear-containers.target clear-containers-debug.target
 endif
 
 HAVE_LIBUDEV := $(shell pkg-config --exists libudev 2>/dev/null || echo 'no')

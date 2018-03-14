@@ -1,0 +1,10 @@
+[Unit]
+Description=Clear Container debug console
+
+[Service]
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+StandardInput=tty
+StandardOutput=tty
+PrivateDevices=yes
+Type=simple
+ExecStart=/usr/bin/bash
